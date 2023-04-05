@@ -1,0 +1,126 @@
+# The below defined cluster has 6 nodes.
+# Cluster configuration:
+#      3 MONS, 2 MGR, 50 OSD, 3 MDS service daemon(s)
+globals:
+  - ceph-cluster:
+      name: ceph
+      networks:
+        public:
+          - 10.70.44.0/22
+      nodes:
+        - hostname: dhcp47-39.lab.eng.blr.redhat.com
+          id: node1
+          ip: 10.70.47.39
+          root_password: r00tme
+          role:
+            - _admin
+            - installer
+            - mon
+            - mgr
+            - osd
+            - node-exporter
+            - alertmanager
+            - grafana
+            - prometheus
+            - crash
+          volunes:
+            - /dev/sdb
+            - /dev/sdc
+            - /dev/sdd
+            - /dev/sde
+            - /dev/sdf
+            - /dev/sdg
+            - /dev/sdh
+            - /dev/sdi
+            - /dev/sdj
+            - /dev/sdk
+        - hostname: dhcp47-147.lab.eng.blr.redhat.com
+          id: node2
+          ip: 10.70.47.147
+          root_password: r00tme
+          role:
+            - osd
+            - mon
+            - mgr
+            - mds
+            - node-exporter
+            - alertmanager
+            - crash
+            - rgw
+          volunes:
+            - /dev/sdb
+            - /dev/sdc
+            - /dev/sdd
+            - /dev/sde
+            - /dev/sdf
+            - /dev/sdg
+            - /dev/sdh
+            - /dev/sdi
+            - /dev/sdj
+            - /dev/sdk
+        - hostname: dhcp47-133.lab.eng.blr.redhat.com
+          id: node3
+          ip: 10.70.47.133
+          root_password: r00tme
+          role:
+            - mon
+            - osd
+            - node-exporter
+            - rgw
+            - mds
+          volunes:
+            - /dev/sdb
+            - /dev/sdc
+            - /dev/sdd
+            - /dev/sde
+            - /dev/sdf
+            - /dev/sdg
+            - /dev/sdh
+            - /dev/sdi
+            - /dev/sdj
+            - /dev/sdk
+        - hostname: dhcp46-82.lab.eng.blr.redhat.com
+          id: node4
+          ip: 10.70.46.82
+          root_password: r00tme
+          role:
+            - osd
+            - rgw
+            - mds
+            - nfs
+          volunes:
+            - /dev/sdb
+            - /dev/sdc
+            - /dev/sdd
+            - /dev/sde
+            - /dev/sdf
+            - /dev/sdg
+            - /dev/sdh
+            - /dev/sdi
+            - /dev/sdj
+            - /dev/sdk
+        - hostname: dhcp46-75.lab.eng.blr.redhat.com
+          id: node5
+          ip: 10.70.46.75
+          root_password: r00tme
+          role:
+            - rgw
+            - osd
+            - mds
+          volunes:
+            - /dev/sdb
+            - /dev/sdc
+            - /dev/sdd
+            - /dev/sde
+            - /dev/sdf
+            - /dev/sdg
+            - /dev/sdh
+            - /dev/sdi
+            - /dev/sdj
+            - /dev/sdk
+        - hostname: dhcp46-55.lab.eng.blr.redhat.com
+          id: node6
+          ip: 10.70.46.55
+          root_password: r00tme
+          role:
+            - client
