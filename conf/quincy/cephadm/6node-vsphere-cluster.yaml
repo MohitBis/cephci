@@ -23,7 +23,7 @@ globals:
             - grafana
             - prometheus
             - crash
-          volunes:
+          volumes:
             - /dev/sdb
             - /dev/sdc
             - /dev/sdd
@@ -47,7 +47,7 @@ globals:
             - alertmanager
             - crash
             - rgw
-          volunes:
+          volumes:
             - /dev/sdb
             - /dev/sdc
             - /dev/sdd
@@ -68,7 +68,7 @@ globals:
             - node-exporter
             - rgw
             - mds
-          volunes:
+          volumes:
             - /dev/sdb
             - /dev/sdc
             - /dev/sdd
@@ -88,7 +88,7 @@ globals:
             - rgw
             - mds
             - nfs
-          volunes:
+          volumes:
             - /dev/sdb
             - /dev/sdc
             - /dev/sdd
@@ -107,7 +107,7 @@ globals:
             - rgw
             - osd
             - mds
-          volunes:
+          volumes:
             - /dev/sdb
             - /dev/sdc
             - /dev/sdd
