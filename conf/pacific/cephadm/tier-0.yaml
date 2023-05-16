@@ -2,6 +2,8 @@ globals:
   - ceph-cluster:
       name: ceph
       node1:
+        networks:
+          -  shared_net_12
         role:
           - _admin
           - installer
@@ -16,6 +18,8 @@ globals:
         no-of-volumes: 6
         disk-size: 15
       node2:
+        networks:
+          -  shared_net_12
         role:
           - osd
           - mon
@@ -28,6 +32,8 @@ globals:
         no-of-volumes: 6
         disk-size: 15
       node3:
+        networks:
+          -  shared_net_12
         role:
           - mon
           - osd
@@ -38,5 +44,7 @@ globals:
         no-of-volumes: 6
         disk-size: 15
       node4:
+        networks:
+          -  shared_net_12
         role:
           - client
