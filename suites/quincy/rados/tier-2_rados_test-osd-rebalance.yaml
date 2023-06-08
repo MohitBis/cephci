@@ -122,16 +122,30 @@ tests:
         write_iteration: 4
         delete_pool: true
 
+# Acting set for the PG changes frequently, hence the test is currently out of Quincy suites.
+#  - test:
+#      name: ObjectStore block stats verification
+#      module: test_objectstore_block.py
+#      desc: Reduce data from an object and verify the decrease in blocks
+#      polarion-id: CEPH-83571714
+#      abort-on-fail: true
+#      config:
+#        create_pool: true
+#        pool_name: test-objectstore
+#        write_iteration: 3
+#        delete_pool: true
+
   - test:
       name: Cluster behaviour when OSDs are full
       desc: Test PG autoscaling and rebalancing when OSDs are near-full, backfill-full and completely full
       module: test_osd_full.py
       polarion-id: CEPH-83571715
       config:
-        pool_config:
-          pool-1:
-            pool_type: replicated
-            pool_name: re_pool_3
-            pg_num: 1
-            disable_pg_autoscale: true
-          # EC pool will be added later
+        pg_autoscaling:
+          pool_config:
+            pool-1:
+              pool_type: replicated
+              pool_name: re_pool_3
+              pg_num: 1
+              disable_pg_autoscale: true
+            # EC pool will be added later

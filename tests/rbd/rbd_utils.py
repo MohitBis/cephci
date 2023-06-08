@@ -78,7 +78,8 @@ class Rbd:
             node = kw.get("node") if kw.get("node") else self.ceph_client
             if self.k_m and "rbd create" in cmd and "--data-pool" not in cmd:
                 cmd = cmd + " --data-pool {}".format(self.datapool)
-
+            if kw.get("client_id"):
+                cmd += f" -n {kw['client_id']}"
             if kw.get("long_running"):
                 out = node.exec_command(
                     sudo=True,
@@ -146,7 +147,18 @@ class Rbd:
         return True
 
     def create_image(self, pool_name, image_name, size, **kw):
+        """Create an image inside the pool
+
+        Args:
+            pool_name  : name of the pool where image is to be created
+            image_name : name of the image file to be created
+            size : size for the image to be created
+            kw : other parameter supported by rbd create command
+                ex. namespace: name of the namespace within the pool
+        """
         cmd = f"rbd create {pool_name}/{image_name} --size {size}"
+        if kw.get("namespace"):
+            cmd += f" --namespace {kw['namespace']}"
         if kw.get("image_feature"):
             image_feature = kw.get("image_feature")
             cmd += f" --image-feature {image_feature}"
@@ -183,6 +195,8 @@ class Rbd:
         self.exec_cmd(
             cmd="ceph osd pool set {} allow_ec_overwrites true".format(poolname)
         )
+        if self.ceph_version >= 3:
+            self.exec_cmd(cmd="rbd pool init {}".format(poolname))
         return True
 
     def check_pool_exists(self, pool_name: str) -> bool:
@@ -248,7 +262,7 @@ class Rbd:
         """
 
         cmd = f"rbd snap create {pool_name}/{image_name}@{snap_name}"
-        return self.exec_cmd(cmd=cmd)
+        return self.exec_cmd(cmd=cmd, output=True)
 
     def snap_ls(self, pool_name: str, image_name: str, snap_name=None, all=False):
         """
@@ -524,7 +538,7 @@ class Rbd:
             cmd = f"rbd snap unprotect {snap_name}"
         return self.exec_cmd(cmd=cmd)
 
-    def image_exists(self, pool_name, image_name):
+    def image_exists(self, pool_name, image_name, **kw):
         """
         Verify if image exists in the specified pool
         Args:
@@ -535,7 +549,10 @@ class Rbd:
             True: if image exists in pool
             False: if image doesn't exist in pool
         """
-        out = self.exec_cmd(cmd=f"rbd ls {pool_name} --format json", output=True)
+        cmd = f"rbd ls {pool_name} --format json"
+        if kw.get("namespace"):
+            cmd += f" --namespace {kw['namespace']}"
+        out = self.exec_cmd(cmd=cmd, output=True)
         images = json.loads(out)
         return True if any(image_name == image for image in images) else False
 
@@ -649,10 +666,7 @@ class Rbd:
         """
         cmd = f"rbd bench --io-type {kw.get('io_type', 'write')} --io-threads {kw.get('io_threads', 16)}"
         cmd += f" --io-total {kw.get('io', '500M')} {kw.get('imagespec')}"
-        return self.exec_cmd(
-            cmd=cmd,
-            long_running=True,
-        )
+        return self.exec_cmd(cmd=cmd, **kw)
 
     def export_image(self, imagespec, path):
         """Exports provided image as provided path.
@@ -683,7 +697,7 @@ class Rbd:
                     "--yes-i-really-really-mean-it".format(pool=pool)
                 )
 
-    def migration_prepare(self, src_spec, dest_spec):
+    def migration_prepare(self, src_spec, dest_spec, **kw):
         """Migration Prepare.
 
         This method prepare the live migration of image from source to destination
@@ -699,7 +713,7 @@ class Rbd:
             command += f"{src_spec} {dest_spec}"
         else:
             command += f"{dest_spec} --import-only --source-spec {src_spec}"
-        return self.exec_cmd(cmd=command)
+        return self.exec_cmd(cmd=command, **kw)
 
     def migration_action(self, action, dest_spec):
         """Migration action
@@ -712,6 +726,19 @@ class Rbd:
         """
         log.info(f"Starting the {action} migration process")
         return self.exec_cmd(cmd=f"rbd migration {action} {dest_spec}")
+
+    def create_namespace(self, pool_name, namespace_name):
+        """Create namespace for pool
+
+        rbd namespace create --pool <poolname> --namespace <namespace_name>
+
+        Args:
+            pool_name : Name of the pool within the namespace will create
+            namespace_name : name for the namespace to be created
+        """
+        return self.exec_cmd(
+            cmd=f"rbd namespace create --pool {pool_name} --namespace {namespace_name}"
+        )
 
     def list_config(self, level, entity, **kw):
         """List all RBD config settings.
@@ -1170,6 +1197,33 @@ def verify_image_size(rbd, pool, image, size):
     return 1
 
 
+def set_ceph_config(rbd, entity, key, value, **kw):
+    """Override ceph config settings.
+    ceph config set <entity> <key> <value>
+    Args:
+        entity: config entity (mon, osd)
+        key: config option key (ex., rbd_move_to_trash_on_remove)
+        value: config option value to be set
+        kw: other ceph arguments like config options
+    Returns:
+        exec_cmd response
+    """
+    return rbd.exec_cmd(cmd=f"ceph config set {entity} {key} {value}", **kw)
+
+
+def get_ceph_config(rbd, entity, key, **kw):
+    """Get ceph config settings.
+    ceph config get <entity> <key>
+    Args:
+        entity: config entity (mon, osd)
+        key: config option key (ex., rbd_move_to_trash_on_remove)
+        kw: other ceph arguments like config options
+    Returns:
+        exec_cmd response
+    """
+    return rbd.exec_cmd(cmd=f"ceph config get {entity} {key}", **kw)
+
+
 def resize_parent_and_clone(rbd, resize_sequence, parent_clone_spec):
     """
     Resize parent and clone images to compensate overhead due to the header size.
@@ -1321,3 +1375,41 @@ def resize_parent_and_clone(rbd, resize_sequence, parent_clone_spec):
                 "Clone resize not required since clone is either not encrypted or encrypted with same format as parent"
             )
         return 0
+
+
+def verify_namespace_exist(rbd, pool, namespace):
+    """Method verifies for namespace exist in namespace list
+    Args:
+        rbd: rbd_object
+        pool: pool name
+    """
+    log.info("verifying namespcae exist in namespace list")
+    out = rbd.exec_cmd(cmd=f"rbd namespace ls --pool {pool} --format json", output=True)
+    result = json.loads(str(out))
+    for value in result:
+        if value["name"] == namespace:
+            log.info(f"namespace {namespace} exist in namespace list")
+            return 0
+    log.error(f"namespace {namespace} does not exist in namespace list")
+
+
+def client_config_read_only(rbd, client_id, pool, **kw):
+    """
+    configure the client with read-only access for namespace or pool
+
+    Args:
+        client_id: id of client which need to configure
+        **kw: Any other optional arguement like pool or namesapce
+
+    Returns:
+        exec_cmd response
+    """
+    mon_role = kw.get("mon_role", "allow *")
+    mds_role = kw.get("mds_role", "allow *")
+    mgr_role = kw.get("mgr_role", "allow *")
+    osd_role = kw.get("osd_role", "allow *")
+    cmd = f"ceph auth caps {client_id}"
+    cmd += f" mon '{mon_role}' mds '{mds_role}'"
+    cmd += f" mgr '{mgr_role}'"
+    cmd += f" osd '{osd_role}'"
+    return rbd.exec_cmd(cmd=cmd)
