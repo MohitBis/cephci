@@ -78,7 +78,7 @@ tests:
       config:
         command: add
         id: client.1
-        node: node4
+        node: node9
         install_packages:
           - ceph-common
           - ceph-fuse
@@ -93,7 +93,7 @@ tests:
       config:
         command: add
         id: client.2
-        node: node5
+        node: node10
         install_packages:
           - ceph-common
           - ceph-fuse
@@ -108,7 +108,7 @@ tests:
       config:
         command: add
         id: client.3
-        node: node6
+        node: node11
         install_packages:
           - ceph-common
           - ceph-fuse
@@ -123,7 +123,7 @@ tests:
       config:
         command: add
         id: client.4
-        node: node7
+        node: node12
         install_packages:
           - ceph-common
           - ceph-fuse
@@ -134,73 +134,53 @@ tests:
       name: configure client
 
   - test:
-      name: Nfs Ganesha File Lock
-      module: nfs_verify_file_lock.py
-      desc: Perform locking on same file from 2 different clients
-      polarion-id:
-      abort-on-fail: false
+      name: NFS Service deployment with spec with 4 nodes
+      desc: Add NFS services using spec file with 4 nodes
+      module: test_cephadm.py
+      polarion-id: 
       config:
-        nfs_version: 4.1
-        clients: 2
+        steps:
+          - config:
+              command: apply_spec
+              service: orch
+              validate-spec-services: true
+              specs:
+                - service_type: nfs
+                  service_id: nfs-service
+                  placement:
+                    nodes:
+                      - node1
+                      - node2
+                      - node3
+                      - node4
+                  spec:
+                    port: 2049
 
   - test:
-      name: Nfs Ganesha Pynfs
-      module: nfs_verify_pynfs.py
-      desc: Perform pynfs tests on the Nfs cluster
-      polarion-id:
-      abort-on-fail: false
+      name: NFS Service deployment with spec with 8 nodes
+      desc: Add NFS services using spec file with 8 nodes
+      module: test_cephadm.py
+      polarion-id: 
       config:
-        nfs_version: 4.1
-        clients: 2
-
-  - test:
-      name: Nfs Ganesha Bonnie
-      module: nfs_verify_bonnie.py
-      desc: Perform bonnie tests on the Nfs cluster
-      polarion-id:
-      abort-on-fail: false
-      config:
-        nfs_version: 4.2
-        clients: 4
-
-
-  - test:
-      name: Nfs Verify Readdir Ops
-      module: nfs_verify_readdir_ops.py
-      desc: Perform readir operation from clients
-      polarion-id:
-      abort-on-fail: false
-      config:
-        nfs_version: 4.2
-        clients: 4
+        steps:
+          - config:
+              command: apply_spec
+              service: orch
+              validate-spec-services: true
+              specs:
+                - service_type: nfs
+                  service_id: nfs-service
+                  placement:
+                    nodes:
+                      - node1
+                      - node2
+                      - node3
+                      - node4
+                      - node5
+                      - node6
+                      - node7
+                      - node8
+                  spec:
+                    port: 2049
 
 
-  - test:
-      name: Nfs Verify File Operations
-      module: nfs_verify_file_operations.py
-      desc: Change the ownership (user and group) of files within the NFS export
-      polarion-id:
-      abort-on-fail: false
-      config:
-        nfs_version: 4.2
-        clients: 3
-        file_count: 10
-        operations:
-          client01 : create_files
-          client02 : change_ownership
-          client03 : perform_lookups
-
-  - test:
-      name: Nfs Verify File Operations
-      module: nfs_verify_file_operations.py
-      desc: Set different file permissions (read, write, execute) for files within the NFS 
-      polarion-id:
-      abort-on-fail: false
-      config:
-        nfs_version: 4.2
-        clients: 3
-        file_count: 10
-        operations:
-          client01 : create_files
-          client02 : change_permission
-          client03 : perform_lookups
